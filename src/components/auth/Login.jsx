@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../../services/authService';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -17,13 +19,13 @@ export default function Login() {
 
     try {
       const res = await loginUser(form);
-      localStorage.setItem('token', res.token);
-      localStorage.setItem('user', JSON.stringify(res.user));
+      login(res.user.user_id, res.token); // update context + localStorage
       navigate('/');
     } catch (err) {
       setError(err.message);
     }
   };
+
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">

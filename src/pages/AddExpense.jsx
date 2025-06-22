@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import config from '../../config';
-const BASE_URL = config.API_BASE_URL
+import { addExpense} from '../services/expenseService';
+import { getCategories } from '../services/categoryService';
 
 export default function AddExpense() {
   const [form, setForm] = useState({
@@ -15,20 +14,20 @@ export default function AddExpense() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const token = localStorage.getItem('token');
-
-  const fetchCategories = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}/expenses/categories`);
-      setCategories(res.data);
-    } catch (err) {
-      console.error('Failed to load categories');
-    }
-  };
-
+  // Fetch categories from backend
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (err) {
+        console.error('Could not fetch categories');
+      }
+    };
+
     fetchCategories();
   }, []);
+
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -39,17 +38,12 @@ export default function AddExpense() {
     setError('');
 
     try {
-      await axios.post(`${BASE_URL}/expenses`,
-        {
-          title: form.title,
-          amount: parseFloat(form.amount),
-          category_id: parseInt(form.category_id),
-          date: form.date
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      await addExpense({
+        title: form.title,
+        amount: parseFloat(form.amount),
+        category_id: parseInt(form.category_id),
+        date: form.date
+      });
       navigate('/');
     } catch (err) {
       console.error(err);
@@ -61,7 +55,7 @@ export default function AddExpense() {
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded shadow-md w-full max-w-md"
+        className="bg-white p-6 rounded shadow-sm w-full max-w-md"
       >
         <h2 className="text-xl font-bold mb-4">Add New Expense</h2>
 
@@ -91,7 +85,7 @@ export default function AddExpense() {
           name="category_id"
           value={form.category_id}
           onChange={handleChange}
-          className="w-full mb-3 p-2 border border-gray-300 rounded"
+          className="w-full max-h-32 mb-3 p-2 border border-gray-300 rounded"
           required
         >
           <option value="">Select Category</option>
